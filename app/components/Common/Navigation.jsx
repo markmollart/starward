@@ -1,25 +1,20 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
-import { getSlug } from '../../utils/wpHelpers';
 
 export default class Navigation extends Component {
-  getClassNames(item, currentPath) {
-    const isActive = getSlug(item.url) === currentPath;
-    return isActive ? `active ${item.classes}` : `${item.classes}`;
-  }
   getLink(item) {
     // External Link Case
     if (item.classes && item.classes.indexOf('external') !== -1) {
-      return <a href={`${getSlug(item.url)}`} target="_blank" rel="noopener noreferrer">{item.title.replace(/&#038;/g, '&')}</a>;
+      return <a href={item.url} target="_blank" rel="noopener noreferrer" dangerouslySetInnerHTML={{__html: item.title}} />;
     }
     // Internal Link Case
-    return <Link to={`${getSlug(item.url)}`}>{item.title.replace(/&#038;/g, '&')}</Link>;
+    return <Link to={item.url} activeClassName="active" dangerouslySetInnerHTML={{__html: item.title}} />;
   }
-  renderSubNavigation(subItems, currentPath) {
+  renderSubNavigation(subItems) {
     return (
       <ul>
         {subItems.map((subItem, index) => (
-          <li key={index} className={this.getClassNames(subItem, currentPath)}>
+          <li key={index} className={`${subItem.classes}`}>
             {this.getLink(subItem)}
           </li>
         ))}
@@ -27,14 +22,14 @@ export default class Navigation extends Component {
     );
   }
   render() {
-    const { items, currentPath } = this.props;
+    const { items } = this.props;
     return (
       <nav className="nav_banner" role="navigation">
         <ul>
           {items.map((item, index) => (
-            <li key={index} className={this.getClassNames(item, currentPath)}>
+            <li key={index} className={`${item.classes}`}>
               {this.getLink(item)}
-              {item.children && item.children.length > 0 ? this.renderSubNavigation(item.children, currentPath) : null}
+              {item.children && item.children.length > 0 ? this.renderSubNavigation(item.children) : null}
             </li>
           ))}
         </ul>

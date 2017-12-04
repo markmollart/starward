@@ -1,5 +1,8 @@
 import axios from 'axios';
-import { WP_API, POSTS_PER_PAGE } from '../../app/config/app';
+import { POSTS_PER_PAGE } from '../../app/config/app';
+import { WP_API, WP_AUTH } from '../../server/config/app';
+
+const auth = { Authorization: `Basic ${WP_AUTH}` };
 
 /* ----------- WP REST API v2 endpoints ----------- */
 const WP_API_ROOT = `${WP_API}/wp/v2`;
@@ -113,8 +116,15 @@ const wpQueries = {
   Query: {
     page(query, args) {
       const wpPageURL = `${wpPagesUrl}?slug=${args.slug}`;
+      if (args.preview) {
+        const config = { headers: auth};
+        return axios.get(`${wpPagesUrl}/${args.preview}/revisions`, config)
+        .then(res => res.data[0]);
+      }
       return axios.get(wpPageURL)
-      .then(res => res.data[0]);
+      .then(res => {
+        return res.data[0];
+      });
     },
     posts(query, args) {
       const pageNumber = args.page ? args.page : 1;
@@ -153,6 +163,11 @@ const wpQueries = {
       .catch(error => console.log('error', error));
     },
     post(query, args) {
+      if (args.preview) {
+        const config = { headers: auth};
+        return axios.get(`${wpPostsUrl}/${args.preview}/revisions`, config)
+        .then(res => res.data[0]);
+      }
       return axios.get(`${wpPostsUrl}?slug=${args.slug}`)
       .then(res => res.data[0]);
     },

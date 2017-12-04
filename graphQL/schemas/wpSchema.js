@@ -4,6 +4,8 @@ const wpSchema = `
     title: String,
     content: String,
     slug: String,
+    type: String,
+    link: String,
     yoast: JSON,
     acf: JSON,
     featuredImage: FeaturedImage
@@ -36,6 +38,7 @@ const wpSchema = `
     content: String,
     excerpt: String,
     date: String,
+    link: String,
     featuredImage: FeaturedImage,
     categories: [Taxonomy],
     author: User,
@@ -76,11 +79,11 @@ const wpSchema = `
   }
 
   type Query {
-    page (slug: String): Page
+    page (slug: String, preview: Int): Page
     posts (page: Int, perPage: Int): Posts
     category (slug: String, page: Int): Category
     author (name: String, page: Int): Author
-    post (slug: String): Post
+    post (slug: String, preview: Int): Post
     search (type: String, term: String, page: Int, perPage: Int): Posts
   }
 `;

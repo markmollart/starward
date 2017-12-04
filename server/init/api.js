@@ -1,6 +1,6 @@
 import moment from 'moment';
 import { appSettings, gravityForms, wp } from '../../graphQL';
-import { serversideStateCharacterBlacklistRegex, REDIS_PREFIX } from '../config/app';
+import { serversideStateCharacterBlacklistRegex, WP_URL, REDIS_PREFIX } from '../config/app';
 import { createRedisClient } from '../redis';
 import { submitForm } from './gravitySubmit';
 
@@ -8,9 +8,16 @@ import { submitForm } from './gravitySubmit';
 const client = createRedisClient(REDIS_PREFIX);
 
 /* Removes illegal characters from WP API */
+/* Checks for WP_URL in response and replaces it with the base url */
+/* Reinstates correct wp-content links within response */
 const sanitizeJSON = (json) => {
   const stringified = JSON.stringify(json);
-  const cleaned = stringified.replace(serversideStateCharacterBlacklistRegex, '');
+  const wpUrlRegex = new RegExp(WP_URL, 'g');
+  const wpContentUrlRegex = new RegExp('/wp-content', 'g');
+  const cleaned = stringified
+  .replace(serversideStateCharacterBlacklistRegex, '')
+  .replace(wpUrlRegex, '')
+  .replace(wpContentUrlRegex, `${WP_URL}/wp-content`);
   return JSON.parse(cleaned);
 };
 /* Handle success and sanitize JSON response */
@@ -74,11 +81,12 @@ export default(app) => {
   /* Expects query param ?slug= */
   app.get('/api/page', (req, res) => {
     wp(`
-      query get_page($slug: String) {
-        active_page: page(slug: $slug) {
+      query get_page($slug: String, $preview: Int) {
+        active_page: page(slug: $slug, preview: $preview) {
           title,
           content,
           slug,
+          link,
           featuredImage{
             alt,
             url,
@@ -87,7 +95,7 @@ export default(app) => {
           acf,
           seo: yoast
         }
-      }`, {slug: req.query.slug})
+      }`, {slug: req.query.slug, preview: req.query.preview})
       .then(handleSuccess(res))
       .catch(handleError(res));
   });
@@ -133,13 +141,14 @@ export default(app) => {
   /* Expects query param ?slug= */
   app.get('/api/post', (req, res) => {
     wp(`
-      query get_post($slug: String) {
-        activePost: post(slug: $slug){
+      query get_post($slug: String, $preview: Int) {
+        activePost: post(slug: $slug, preview: $preview){
           slug,
           title,
           content,
           date,
           acf,
+          link,
           pagination{
             next{
               slug,
@@ -177,7 +186,7 @@ export default(app) => {
             avatar
           }
         }
-      }`, {slug: req.query.slug})
+      }`, {slug: req.query.slug, preview: req.query.preview})
       .then(handleSuccess(res))
       .catch(handleError(res));
   });
